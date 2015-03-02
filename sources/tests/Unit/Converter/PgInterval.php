@@ -16,12 +16,18 @@ class PgInterval extends BaseConverter
     public function testFromPg()
     {
         $session = $this->buildSession();
+
+        $interval  = new \DateInterval('P11D');
+        $interval->invert = 1;
+
         $this
             ->variable($this->newTestedInstance()->fromPg(null, 'interval', $session))
             ->isNull()
             ->dateInterval($this->newTestedInstance()->fromPg('P14346DT22H47M3.138892S', 'interval', $session))
             ->isEqualTo(new \DateInterval('P14346DT22H47M3S')) // <- truncated to second precision
-            ;
+            ->dateInterval($this->newTestedInstance()->fromPg('P-11D', 'interval', $session))
+            ->isEqualTo($interval)
+        ;
     }
 
     public function testToPg()

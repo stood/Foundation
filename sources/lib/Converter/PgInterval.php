@@ -31,9 +31,15 @@ class PgInterval implements ConverterInterface
         if (trim($data) === '') {
             return null;
         }
-
+        $invert = 0;
+        if(preg_match("/-/", $data)){
+            $data = str_replace('-', '', $data);
+            $invert = 1;
+        }
         try {
-            return new \DateInterval(preg_replace('/\.[0-9]+S/', 'S', $data));
+            $interval =  new \DateInterval(preg_replace('/\.[0-9]+S/', 'S', $data));
+            $interval->invert = $invert;
+            return $interval;
         } catch (\Exception $e) {
             throw new ConverterException(sprintf("Data '%s' is not an ISO8601 interval representation.", $data));
         }
