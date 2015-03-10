@@ -72,4 +72,31 @@ trait QueryParameterParserTrait
 
         return str_replace('"','', $matchs[1]);
     }
+
+    /**
+     * prepareParameters
+     *
+     * Prepare and convert $parameters if needed.
+     *
+     * @access protected
+     * @param  string   $sql
+     * @param  array    $parameters
+     * @param  Session  $session
+     * @return array    $parameters
+     */
+    protected function prepareParameters($sql, array $parameters, Session $session)
+    {
+        $types = $this->getParametersType($sql);
+
+        foreach ($parameters as $index => $value) {
+            if ($types[$index] !== '') {
+                $parameters[$index] = $session
+                    ->getClientUsingPooler('converter', $types[$index])
+                    ->toPgStandardFormat($value, $types[$index])
+                ;
+            }
+        }
+
+        return $parameters;
+    }
 }

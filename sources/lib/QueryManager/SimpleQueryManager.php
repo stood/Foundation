@@ -49,6 +49,7 @@ class SimpleQueryManager extends Client
                 'session_stamp' => $this->getSession()->getStamp(),
             ]
         );
+
         $start    = microtime(true);
         $resource = $this->doQuery($sql, $parameters);
         $end      = microtime(true);
@@ -85,36 +86,9 @@ class SimpleQueryManager extends Client
             ->getConnection()
             ->sendQueryWithParameters(
                 $this->orderParameters($sql),
-                $this->prepareArguments($sql, $parameters)
+                $this->prepareParameters($sql, $parameters, $this->getSession())
             )
             ;
-    }
-
-    /**
-     * prepareArguments
-     *
-     * Prepare and convert $parameters if needed.
-     *
-     * @access protected
-     * @param  string   $sql
-     * @param  array    $parameters
-     * @return array    $parameters
-     */
-    protected function prepareArguments($sql, array $parameters)
-    {
-        $types = $this->getParametersType($sql);
-
-        foreach ($parameters as $index => $value) {
-            if ($types[$index] !== '') {
-                $parameters[$index] = $this
-                    ->getSession()
-                    ->getClientUsingPooler('converter', $types[$index])
-                    ->toPgStandardFormat($value, $types[$index])
-                    ;
-            }
-        }
-
-        return $parameters;
     }
 
     /**
