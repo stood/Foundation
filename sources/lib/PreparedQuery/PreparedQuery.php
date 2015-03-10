@@ -123,12 +123,16 @@ class PreparedQuery extends Client
             $this->prepare();
         }
 
+        if ($this->converters === null ) {
+            $this->converters = $this->prepareConverters($this->sql, $this->getSession());
+        }
+
         return $this
             ->getSession()
             ->getConnection()
             ->sendExecuteQuery(
                 $this->getClientIdentifier(),
-                $this->prepareValues($this->sql, $values),
+                $this->prepareParameters($values, $this->converters),
                 $this->sql
             );
     }
@@ -168,58 +172,7 @@ class PreparedQuery extends Client
         return $this->sql;
     }
 
-    /**
-     * prepareValues
-     *
-     * Prepare parameters to be sent.
-     *
-     * @access protected
-     * @param  mixed    $sql
-     * @param  array    $values
-     * @return array    $prepared_values
-     */
-    protected function prepareValues($sql, array $values)
-    {
-        if ($this->converters === null ) {
-            $this->prepareConverters($sql);
-        }
 
-        foreach ($values as $index => $value) {
-            if (isset($this->converters[$index])) {
-                $values[$index] = call_user_func($this->converters[$index], $value);
-            }
-        }
 
-        return $values;
-    }
 
-    /**
-     * prepareConverters
-     *
-     * Store converters needed for the query parameters.
-     *
-     * @access protected
-     * @param mixed             $sql
-     * @return PreparedQuery    $this
-     */
-    protected function prepareConverters($sql)
-    {
-        foreach ($this->getParametersType($sql) as $index => $type) {
-            if ($type === '') {
-                $this->converters[$index] = null;
-            } else {
-                $converter = $this
-                    ->getSession()
-                    ->getClientUsingPooler('converter', $type)
-                    ->getConverter()
-                    ;
-
-                $this->converters[$index] = function ($value) use ($converter, $type) {
-                    return $converter->toPgStandardFormat($value, $type, $this->getSession());
-                };
-            }
-        }
-
-        return $this;
-    }
 }

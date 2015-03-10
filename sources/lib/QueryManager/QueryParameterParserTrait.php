@@ -72,4 +72,56 @@ trait QueryParameterParserTrait
 
         return str_replace('"','', $matchs[1]);
     }
+
+    /**
+     * prepareConverters
+     *
+     * Prepare converters needed for the query parameters.
+     *
+     * @access protected
+     * @param mixed             $sql
+     * @param Session           $session
+     * @return array    $converters
+     */
+    protected function prepareConverters($sql, Session $session)
+    {
+        $converters = [];
+        foreach ($this->getParametersType($sql) as $index => $type) {
+            if ($type === '') {
+                $converters[$index] = null;
+            } else {
+                $converter = $session
+                    ->getClientUsingPooler('converter', $type)
+                    ->getConverter()
+                ;
+
+                $converters[$index] = function ($value) use ($converter, $type, $session) {
+                    return $converter->toPgStandardFormat($value, $type, $session);
+                };
+            }
+        }
+
+        return $converters;
+    }
+
+    /**
+     * prepareParameters
+     *
+     * Prepare parameters to be sent.
+     *
+     * @access protected
+     * @param  array    $values
+     * @param  array    $converters
+     * @return array    $prepared_values
+     */
+    protected function prepareParameters(array $values, array $converters)
+    {
+        foreach ($values as $index => $value) {
+            if (isset($converters[$index])) {
+                $values[$index] = call_user_func($converters[$index], $value);
+            }
+        }
+
+        return $values;
+    }
 }
